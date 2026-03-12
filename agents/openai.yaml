@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Build GitHub Deploy Install"
+  short_description: "Create, publish, and install simple public skill repos"
+  default_prompt: "Use $skill-1build-2githubdeploy-3npxskillsinstall-skill to create a minimal skill repo, push it public to GitHub, and install it with npx skills add -g --all -y."
