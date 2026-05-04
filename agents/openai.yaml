@@ -1,4 +1,4 @@
 interface:
   display_name: "Skill Build GitHub Deploy Install"
-  short_description: "Create, publish, and install simple public skill repos from PROJECTS_MCP_TOOLS"
-  default_prompt: "Use $skill-1build-2githubdeploy-3npxskillsinstall-skill to create a minimal skill repo under /Users/samihalawa/git/PROJECTS_MCP_TOOLS, push it public to GitHub, and install it with npx skills add -g --all -y."
+  short_description: "Create or update minimal skill repos and install with skills@latest"
+  default_prompt: "Use $skill-1build-2githubdeploy-3npxskillsinstall-skill to inspect existing PROJECTS_MCP_TOOLS skills first, create or update the minimal SKILL.md + agents/openai.yaml repo, publish it with the correct public/private visibility, and install it globally with npx skills@latest add --global --all."
