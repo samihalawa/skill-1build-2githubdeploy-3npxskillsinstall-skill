@@ -81,6 +81,8 @@ For skills that need env vars:
 - Tell the future agent to source/use the user's existing global env vars first, including `~/.env` when available.
 - When possible and appropriate, add missing env names to the user's `~/.env` as placeholders or export lines without overwriting real values. Never commit secret values.
 - In the generated `SKILL.md`, mention env var names, not secret values.
+- If the user or repo instructions say the real project `.env` is the committed source of truth, update that real `.env` with missing env names instead of creating `.env.example` or moving values elsewhere. Preserve every existing value, append only missing names, and commit the `.env` change in that private repo when requested.
+- Do not print cookies, OAuth refresh tokens, API tokens, personal API keys, or full connection strings while documenting or verifying an env-dependent skill. Show variable names and proof that a value exists, not the value itself.
 
 ### 6. Carry Chronicle Requirements Into Relevant Skills
 
