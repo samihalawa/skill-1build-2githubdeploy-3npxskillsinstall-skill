@@ -73,6 +73,14 @@ The `SKILL.md` must include:
 
 The instructions should be operational, not theoretical.
 
+When updating an existing process, recovery, critique, closure, or implementation skill to preserve a lesson learned, keep the lesson general and portable:
+
+- describe the reusable failure pattern, not a private project incident;
+- prefer evidence rules and decision gates over project names, account names, URLs, or transient screenshots;
+- if the lesson is about a failed external/API/tool attempt, include an anti-gate rule: do not disable, hide, remove, mark unavailable, or gate a capability from one failure; require 3 distinct approaches and 2 source layers before any temporary gate;
+- if a temporary gate is justified, require a comment such as `// TEMP-GATE: YYYY-MM-DD - tried: ... - not tried: ... - removal condition: ...`;
+- keep project-specific examples out of universal public skills unless the user explicitly asks and the details are safe to publish.
+
 For skills that need env vars:
 
 - Scan the current conversation and prior task context for env vars already provided, discovered, or used in previous iterations for this exact workflow.
