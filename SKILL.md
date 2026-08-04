@@ -118,6 +118,12 @@ Do not generate `scripts/`, `references/`, `assets/`, `README.md`, `CLAUDE.md`, 
 
 If commands, SQL, shell snippets, prompt templates, or environment setup steps are needed, put them inline in the relevant section of `SKILL.md` so the future agent can execute them directly and adapt them to context. Helper scripts are less flexible and should only exist when the user explicitly asks for a reusable executable.
 
+For zsh snippets, never use lowercase `path` as a scalar or loop variable. It
+is a special array tied to `PATH`; assigning `path=...` or `for path in ...`
+can make later commands appear missing. Use a scoped name such as
+`target_path`, and use absolute executable paths during cleanup when the shell
+environment has already been disturbed.
+
 ### 5. Write The Skill Clearly
 
 The `SKILL.md` must include:
