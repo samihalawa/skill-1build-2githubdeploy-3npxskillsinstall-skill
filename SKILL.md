@@ -69,6 +69,19 @@ Before creating anything, determine the target path explicitly.
   3. the GitHub repository recorded by the source checkout or installation metadata
   4. clone the existing GitHub repo into the expected `PROJECTS_MCP_TOOLS` path when no local source exists
 - Compare names, remotes, current hashes, and installed content before choosing between multiple candidates. Do not overwrite an installed copy and call that publication.
+- Resolve `realpath` for `~/.agents/skills`, `~/.codex/skills`, and
+  `~/.claude/skills` before counting installations. If the Codex and Claude
+  roots are symlinks to `~/.agents/skills`, they are one physical installed copy
+  exposed to multiple agents, not three independent copies.
+- If an installed copy is newer than the source repo, capture a focused diff,
+  separate current-task edits from older installed-only drift, and manually port
+  every surviving lesson into the authoritative source before reinstalling.
+  Never let reinstall silently erase installed-only user work, and never publish
+  unexplained drift merely because it exists globally.
+- Derive skill identity from the `SKILL.md` frontmatter, not only the repo or
+  nested folder name. A repository may contain one nested skill whose directory
+  name differs from the installed name; use the observed path plus
+  `--full-depth` when needed.
 
 ### 2. Search Existing Skills Before Creating A New One
 
@@ -223,6 +236,10 @@ For a standalone repo where the user wants it available broadly, use:
 npx skills@latest add <owner>/<repo> --global --all
 ```
 
+When several known skills were changed, reinstall each authoritative repository
+explicitly. Do not substitute a broad `update -g` that may rewrite unrelated
+skills or obscure which remote supplied each result.
+
 If the repo has multiple nested skills or the root `SKILL.md` might hide subdirectory skills, add `--full-depth`:
 
 ```bash
@@ -254,9 +271,13 @@ Verify all of the following:
 - `npx skills@latest list --global --json` includes the installed skill when the command returns reliably
 - the installed skill appears in the relevant global skills location for the targeted agent(s), such as `~/.codex/skills`, `~/.claude/skills`, or `~/.agents/skills`
 - the installed `SKILL.md` and `agents/openai.yaml` match the repo source, or any intentional install-time difference is documented
+- directly linked references match as well; `SKILL.md`/metadata equality alone
+  is insufficient when the behavior lives in `references/`
 - the GitHub default-branch SHA equals the final local SHA
 - remote raw-file hashes match the source files
 - duplicate global copies of the same skill do not retain stale instructions
+- advertised agent paths resolve to the expected physical install and are not
+  double-counted merely because several symlinks expose the same directory
 
 ## Hard Rules
 
