@@ -230,6 +230,19 @@ npx skills@latest --help
 
 Current Vercel `skills` supports GitHub shorthand, `--global`, `--agent`, `--skill`, `--all`, `--yes`, and `--full-depth`.
 
+Treat `--all` as a broad selector, not a non-interactive convenience flag. It
+is shorthand for all discovered skills and all agents. Never combine a scoped
+`--skill <name>` with `--all`: on a multi-skill repository, `--all` can override
+the scoped intent and install every discovered skill. For a selected skill, use
+an explicit agent plus `--yes`, for example:
+
+```bash
+npx skills@latest add <owner>/<repo> --global --agent codex --skill <name> --yes --full-depth
+```
+
+When advertised agent roots resolve to the same physical directory, one
+explicit agent install is sufficient; verify the shared realpath afterward.
+
 For a standalone repo where the user wants it available broadly, use:
 
 ```bash
