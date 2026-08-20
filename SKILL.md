@@ -1,6 +1,6 @@
 ---
 name: skill-1build-2githubdeploy-3npxskillsinstall-skill
-description: Build, rebuild, enhance, redeploy, publish, or reinstall skills by updating their authoritative minimal repos, committing and pushing to GitHub, and reinstalling them globally with the current Vercel `skills` CLI. Use for every skill lifecycle task. When supplied with another skill, treat it as the target and complete the lifecycle automatically unless the user explicitly requests review-only or no publication.
+description: Create or enhance a skill from user notes, update its authoritative minimal repo, commit and push it to GitHub, and reinstall it globally with the current Vercel `skills` CLI. When this skill is supplied alongside another skill, treat the other skill as the target and complete that entire lifecycle automatically unless the user explicitly requests review-only or no publication.
 ---
 
 # Skill Build GitHub Deploy Npx Skills Install Skill
@@ -28,7 +28,7 @@ When the user provides, links, pastes, or invokes this skill together with one o
 - update `SKILL.md` and `agents/openai.yaml` when the trigger, description, or default behavior changes
 - validate the result
 - commit and push the authoritative branch
-- reinstall each published skill globally with an exact `--agent codex --skill <name> --yes --full-depth` selection
+- reinstall the published skill globally with `npx skills@latest add ... --global --all`
 - prove source, GitHub, and installed-copy equality
 
 The user does **not** need to repeat phrases such as:
@@ -53,19 +53,7 @@ Only stop before commit, push, or installation when the user explicitly says `re
 
 ## Workflow
 
-### 1. Build A Complete Indexed Instruction Inventory
-
-Before choosing an edit, inventory every applicable instruction and skill surface. This is mandatory for every build, rebuild, redeploy, publication, or reinstall handled by this skill.
-
-- Enumerate `AGENTS.md`, `AGENTS_positions.md`, `CLAUDE.md`, and every `SKILL.md` beneath the active skill roots advertised by the runtime, the shared global skill roots, and the active project. Include source-repo and installed copies of the target.
-- Deduplicate physical files by `realpath`. For every entry record its advertised root, real path, frontmatter name and description when present, SHA-256, and matches for terms that could change this lifecycle, such as build, publish, deploy, install, source, repo, GitHub, `--all`, approval, confirmation, or mandatory workflow language.
-- Read the complete applicable global and project instruction files, the complete target `SKILL.md`, every directly required reference it links for the current edit, and every matched owner whose rule conflicts with or changes the planned lifecycle.
-- Keep unrelated skill bodies out of the model context. Their names, descriptions, hashes, roots, and conflict-match metadata still belong in the complete inventory. This gives full coverage without wasting tokens or importing irrelevant instructions.
-- Record exact inventory counts and re-run the target/source/install part after installation. A partial directory sample, undeduplicated symlink count, or skill-list UI alone is not complete coverage.
-
-Prefer `rg --files` and ordinary shell metadata tools. Do not create a permanent inventory helper unless repeated execution proves one is needed.
-
-### 2. Resolve The Correct Repo Location
+### 1. Resolve The Correct Repo Location
 
 Before creating anything, determine the target path explicitly.
 
@@ -95,7 +83,7 @@ Before creating anything, determine the target path explicitly.
   name differs from the installed name; use the observed path plus
   `--full-depth` when needed.
 
-### 3. Search Existing Skills Before Creating A New One
+### 2. Search Existing Skills Before Creating A New One
 
 Before creating a new skill, inspect existing skill repos under `/Users/samihalawa/git/PROJECTS_MCP_TOOLS` when possible.
 
@@ -106,7 +94,7 @@ Before creating a new skill, inspect existing skill repos under `/Users/samihala
 - Do not fork duplicate skills just because the old skill needs correction.
 - When this skill is paired with a target skill, skip any confirmation stop after discovery and continue through enhancement, publication, installation, and verification.
 
-### 4. Decide Public Versus Private Repo
+### 3. Decide Public Versus Private Repo
 
 Default universal skills to public GitHub repos.
 
@@ -117,7 +105,7 @@ Use a private GitHub repo when the skill is tied to one specific private project
 - Universal process skills with no private project details can be public.
 - Never publish private project instructions, env names tied to sensitive systems, or internal operational details into a public repo unless the user explicitly asks and the content is already safe to publish.
 
-### 5. Create The Minimum Skill Files
+### 4. Create The Minimum Skill Files
 
 In the target folder, keep the repo minimal:
 
@@ -136,7 +124,7 @@ can make later commands appear missing. Use a scoped name such as
 `target_path`, and use absolute executable paths during cleanup when the shell
 environment has already been disturbed.
 
-### 6. Write The Skill Clearly
+### 5. Write The Skill Clearly
 
 The `SKILL.md` must include:
 
@@ -152,8 +140,8 @@ When updating an existing process, recovery, critique, closure, or implementatio
 
 - describe the reusable failure pattern, not a private project incident;
 - prefer evidence rules and decision gates over project names, account names, URLs, or transient screenshots;
-- if the lesson is about a failed external/API/tool attempt, prevent one failed route from being generalized into a universal limitation; inspect the current evidence and use the strongest direct alternative that remains in scope;
-- keep any genuinely necessary temporary gate narrow and state its removal condition;
+- if the lesson is about a failed external/API/tool attempt, include an anti-gate rule: do not disable, hide, remove, mark unavailable, or gate a capability from one failure; require 3 distinct approaches and 2 source layers before any temporary gate;
+- if a temporary gate is justified, require a comment such as `// TEMP-GATE: YYYY-MM-DD - tried: ... - not tried: ... - removal condition: ...`;
 - keep project-specific examples out of universal public skills unless the user explicitly asks and the details are safe to publish.
 
 For skills that need env vars:
@@ -174,7 +162,7 @@ For email- or mailbox-related skills:
 - If the user supplied alias history for one mailbox, preserve that continuity in the generated skill and instruct future agents to search broadly first with patterns like `from:me to:me` before hard-coding one sender alias.
 - Keep actual credentials out of `SKILL.md`; mention env var names such as `SMTP_USER`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_PASSWORD`, `IMAP_USER`, `IMAP_HOST`, `IMAP_PORT`, and `IMAP_PASSWORD`.
 
-### 7. Carry Chronicle And Screenpipe Requirements Into Relevant Skills
+### 6. Carry Chronicle And Screenpipe Requirements Into Relevant Skills
 
 Before writing or publishing the skill, decide whether the new or updated skill is a context, history, intent, memory, forensic, recovery, or recent-work skill.
 
@@ -196,7 +184,7 @@ Before writing or publishing the skill, decide whether the new or updated skill 
 - Do not inject Chronicle boilerplate into unrelated skills. Only add it when the skill's purpose actually involves context recovery, intent reconstruction, recent-work analysis, or forensics.
 - Do not inject Screenpipe boilerplate into unrelated skills either. Only add it when the skill genuinely benefits from recent-work reconstruction beyond the chat transcript.
 
-### 8. GitHub Publish Flow
+### 7. GitHub Publish Flow
 
 When the skill folder is ready, run the direct git flow:
 
@@ -237,7 +225,7 @@ If the repo has unrelated dirty work, preserve it and commit only the target ski
 
 If the requested behavior is already present and validation produces no source diff, do not create an empty commit. Still verify the remote source, reinstall globally, and prove installed-copy equality.
 
-### 9. Install With The Real Vercel Skills CLI
+### 8. Install With The Real Vercel Skills CLI
 
 Before installing, prove the active CLI version and help. Bare `npx skills` can resolve an old local package. Use the current Vercel CLI explicitly:
 
@@ -261,33 +249,44 @@ npx skills@latest add <owner>/<repo> --global --agent codex --skill <name> --yes
 When advertised agent roots resolve to the same physical directory, one
 explicit agent install is sufficient; verify the shared realpath afterward.
 
-For a standalone repo, still select the exact skill and agent. Use `--all` only when the user explicitly requested every discovered skill and every supported agent from that repository.
+For a standalone repo where the user wants it available broadly, use:
+
+```bash
+npx skills@latest add <owner>/<repo> --global --all
+```
 
 When several known skills were changed, reinstall each authoritative repository
 explicitly. Do not substitute a broad `update -g` that may rewrite unrelated
 skills or obscure which remote supplied each result.
 
-If the repo has nested skills, retain `--full-depth` while selecting the exact target:
+If the repo has multiple nested skills or the root `SKILL.md` might hide subdirectory skills, add `--full-depth`:
 
 ```bash
-npx skills@latest add <owner>/<repo> --global --agent codex --skill <name> --yes --full-depth
+npx skills@latest add <owner>/<repo> --global --all --full-depth
+```
+
+For one agent only, target the agent explicitly:
+
+```bash
+npx skills@latest add <owner>/<repo> --global --agent codex --skill '*'
+npx skills@latest add <owner>/<repo> --global --agent claude-code --skill '*'
 ```
 
 Use full GitHub URLs only as a fallback if shorthand fails:
 
 ```bash
-npx skills@latest add https://github.com/<owner>/<repo> --global --agent codex --skill <name> --yes --full-depth
+npx skills@latest add https://github.com/<owner>/<repo> --global --all
 ```
 
 Use `add`, not `install`. Do not use stale command memory. If local help disagrees with prior notes, prefer `npx skills@latest --help`.
 
-### 10. Verify
+### 9. Verify
 
 Verify all of the following:
 
 - `gh repo view <owner>/<repo>` succeeds
 - the repo visibility matches the public/private decision
-- the exact scoped `npx skills@latest add <owner>/<repo> --global --agent codex --skill <name> --yes --full-depth` command succeeds, or the exact fallback is recorded
+- `npx skills@latest add <owner>/<repo> --global --all` succeeds, or the exact fallback command is recorded
 - `npx skills@latest list --global --json` includes the installed skill when the command returns reliably
 - the installed skill appears in the relevant global skills location for the targeted agent(s), such as `~/.codex/skills`, `~/.claude/skills`, or `~/.agents/skills`
 - the installed `SKILL.md` and `agents/openai.yaml` match the repo source, or any intentional install-time difference is documented
@@ -305,7 +304,6 @@ Verify all of the following:
 - Use `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<repo-name>` by default in this environment.
 - If the target folder is inside another git repo, create a standalone nested repo in the target folder before publishing.
 - First inspect existing skills under `/Users/samihalawa/git/PROJECTS_MCP_TOOLS`; update an obviously similar skill instead of creating a duplicate.
-- Build the complete realpath-deduplicated instruction and skill inventory before editing; fully read the target, applicable instructions, required references, and actual conflict owners without loading unrelated bodies.
 - When paired with another skill, infer the full enhance → validate → commit → push → global reinstall → equality-check lifecycle without requiring the user to restate it.
 - Self-application is valid: this skill can enhance, publish, and reinstall itself.
 - Do not stop for plan approval during the paired-skill lifecycle unless the user explicitly requested review before mutation.
@@ -315,6 +313,5 @@ Verify all of the following:
 - Prefer direct shell commands over abstractions.
 - Do not invent packaging requirements that are not needed for the current install flow.
 - Never rely on stale `npx skills` behavior without checking `npx skills@latest --version` and `npx skills@latest --help`.
-- Use an exact `--agent codex --skill <name> --yes --full-depth` install by default; use `--all` only for an explicitly requested all-skills/all-agents install.
 - For env-dependent skills, mention required env var names in `SKILL.md`, tell agents to use existing global envs, and avoid exposing or committing secret values.
 - Finish with the exact repo URL and the exact install command used.
