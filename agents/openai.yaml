@@ -1,4 +1,4 @@
 interface:
   display_name: "Skill Build GitHub Deploy Install"
-  short_description: "Publish and reinstall skills without losing source or installed lessons"
-  default_prompt: "Use $skill-1build-2githubdeploy-3npxskillsinstall-skill as an execution contract. Resolve each authoritative PROJECTS_MCP_TOOLS repo, recover any installed-only durable lessons into source, update SKILL.md and agents/openai.yaml, validate, commit, push, reinstall every named skill globally, use full-depth discovery for nested skills, never combine a scoped --skill selection with the broad --all selector, and prove GitHub-source-to-physical-install equality after resolving symlinks. Do not require the user to repeat update, deploy, commit, push, reinstall, or verify. Stop before publication only when the user explicitly requests review-only or no commit/push/install."
+  short_description: "Inventory, publish, and reinstall skills exactly"
+  default_prompt: "Use $skill-1build-2githubdeploy-3npxskillsinstall-skill for this skill lifecycle: inventory all instruction and skill surfaces by realpath and metadata, fully read the target and actual conflict owners, update its authoritative repo, validate, commit, push, reinstall the exact named skill globally with a scoped agent selection, and prove source, remote, and physical-install equality."
