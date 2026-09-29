@@ -1,6 +1,6 @@
 ---
 name: skill-1build-2githubdeploy-3npxskillsinstall-skill
-description: Create or enhance a skill from user notes, update its authoritative minimal repo, commit and push it to GitHub, and reinstall it globally with the current Vercel `skills` CLI. When this skill is supplied alongside another skill, treat the other skill as the target and complete that entire lifecycle automatically unless the user explicitly requests review-only or no publication.
+description: Create or enhance a skill from user notes, update its authoritative minimal repo, commit and push it to GitHub, then install it in the current agent runtime. On Grok, install like skill-creator into /home/workdir/.grok/skills and never use npx. On Codex or Claude machines, use the Vercel skills CLI. When this skill is supplied alongside another skill, complete that entire lifecycle automatically unless the user explicitly requests review-only or no publication. Triggers include instead he has a skill, in this environment, Grok skills folder, and paired skill deploy.
 ---
 
 # Skill Build GitHub Deploy Npx Skills Install Skill
@@ -12,9 +12,41 @@ Use this skill when the goal is simple and direct:
 1. inspect existing skill repos first
 2. create or update a minimal skill repo locally
 3. push it as the correct public or private GitHub repo
-4. install it with the real Vercel `skills` CLI
+4. install it in the **current agent runtime**, not blindly with npx
 
 Do not add extra scripts, generators, package wrappers, or complex packaging unless the user explicitly asks for them. Most skills should be only `SKILL.md` plus `agents/openai.yaml`.
+
+## Detect Runtime First
+
+Decide the install surface before writing files.
+
+This is a **Grok session** when any of these are true:
+
+- the working skills list includes `/home/workdir/.grok/skills/` or `/root/.grok/skills/`
+- `skill-creator` is available and documents `/home/workdir/.grok/skills/<name>/` as the persisted user-skill root
+- the user talks about “this environment”, “instead he has a skill”, “Grok skills”, or “not via npx”
+- `npx skills` is missing, times out, or is the wrong installer for a session that already loads skills from `.grok/skills`
+
+On Grok:
+
+- source of truth for the live agent is `/home/workdir/.grok/skills/<skill-name>/SKILL.md`
+- that directory name **must equal** the frontmatter `name`
+- persist by writing files there; cloud sync picks them up
+- bundled copies under `/root/.grok/skills/` do not persist; override them by creating the same name under `/home/workdir/.grok/skills/`
+- initialize with `skill-creator` `scripts/init-skill.sh` when the folder does not exist
+- validate with `skill-creator` `scripts/validate-skill.sh`
+- **do not run `npx skills add` as the install step**
+- still push GitHub so Codex/Claude machines can install later with npx
+
+This is a **Codex / Claude / Mac** session when skills live under `~/.agents/skills`, `~/.codex/skills`, or `~/.claude/skills`, and `/Users/samihalawa/git/PROJECTS_MCP_TOOLS` is the repo home. Then use the Vercel `skills` CLI as in section 8.
+
+User phrases that mean Grok-local, not npx:
+
+- “instead he has a skill”
+- “in this environment”
+- “like skill-creator”
+- “install it here”
+- “Grok should see the skill now”
 
 ## Paired-Skill Invocation Contract
 
@@ -28,8 +60,8 @@ When the user provides, links, pastes, or invokes this skill together with one o
 - update `SKILL.md` and `agents/openai.yaml` when the trigger, description, or default behavior changes
 - validate the result
 - commit and push the authoritative branch
-- reinstall the published skill globally with `npx skills@latest add ... --global --all`
-- prove source, GitHub, and installed-copy equality
+- install into the current runtime (Grok folder write, or npx on Codex/Claude)
+- prove source, GitHub, and installed-copy equality on that runtime
 
 The user does **not** need to repeat phrases such as:
 
@@ -57,10 +89,10 @@ Only stop before commit, push, or installation when the user explicitly says `re
 
 Before creating anything, determine the target path explicitly.
 
-- In this environment, default new skill repos to:
-  - `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<repo-name>`
+- On Grok, the live install path is `/home/workdir/.grok/skills/<skill-name>/`. GitHub remains the publish remote. Do not require `/Users/samihalawa/git/PROJECTS_MCP_TOOLS` to exist in a Grok sandbox.
+- On Codex/Claude/Mac, default new skill repos to `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<repo-name>`.
 - Only use a different parent directory if the user explicitly requested one.
-- Never invent ad hoc folders like `/Users/samihalawa/git/skills` when `PROJECTS_MCP_TOOLS` is the expected home.
+- Never invent ad hoc folders like `/Users/samihalawa/git/skills` when `PROJECTS_MCP_TOOLS` is the expected Mac home.
 - If you already created the repo in the wrong place during the same task, stop, fix the path, and clean up the stray folder before continuing.
 - Treat installed copies under `~/.agents/skills`, `~/.codex/skills`, or `~/.claude/skills` as inputs and final verification surfaces, not the editing source of truth.
 - For an existing target, resolve its authoritative source in this order:
@@ -225,7 +257,37 @@ If the repo has unrelated dirty work, preserve it and commit only the target ski
 
 If the requested behavior is already present and validation produces no source diff, do not create an empty commit. Still verify the remote source, reinstall globally, and prove installed-copy equality.
 
-### 8. Install With The Real Vercel Skills CLI
+### 8. Install
+
+#### 8a. Grok runtime — skill-creator path, no npx
+
+When this session is Grok, install by writing the skill onto the persisted user-skill root.
+
+```bash
+CREATOR="/root/.grok/skills/skill-creator"
+TARGET="/home/workdir/.grok/skills/<skill-name>"
+
+# create the folder only when missing; do not wipe an existing skill
+if [ ! -d "$TARGET" ]; then
+  bash "$CREATOR/scripts/init-skill.sh" "<skill-name>" /home/workdir/.grok/skills
+fi
+
+# write SKILL.md and agents/openai.yaml from the authoritative source
+# then validate
+bash "$CREATOR/scripts/validate-skill.sh" "$TARGET"
+```
+
+Finish line on Grok:
+
+- `/home/workdir/.grok/skills/<skill-name>/SKILL.md` exists
+- frontmatter `name` equals the directory name
+- `validate-skill.sh` prints `OK`
+- the skill appears in the next Grok skills list
+- GitHub was still pushed so other runtimes can install
+
+Do not call `npx skills` here. A timeout or missing CLI is not a failed Grok install.
+
+#### 8b. Codex / Claude / Mac — Vercel skills CLI
 
 Before installing, prove the active CLI version and help. Bare `npx skills` can resolve an old local package. Use the current Vercel CLI explicitly:
 
@@ -282,7 +344,19 @@ Use `add`, not `install`. Do not use stale command memory. If local help disagre
 
 ### 9. Verify
 
-Verify all of the following:
+Always:
+
+- GitHub repo exists at the intended visibility
+- remote `SKILL.md` matches the source just written
+- no extra empty commit if the files were already identical
+
+On Grok, also:
+
+- `/home/workdir/.grok/skills/<skill-name>/` is the installed copy
+- `validate-skill.sh` passed
+- npx was not required
+
+On Codex/Claude/Mac, also:
 
 - `gh repo view <owner>/<repo>` succeeds
 - the repo visibility matches the public/private decision
@@ -301,7 +375,9 @@ Verify all of the following:
 ## Hard Rules
 
 - Keep it simple.
-- Use `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<repo-name>` by default in this environment.
+- Detect Grok vs Codex/Claude before choosing an install command.
+- On Grok, install under `/home/workdir/.grok/skills/` with `skill-creator` validate. Never treat npx as the Grok installer.
+- On Codex/Claude/Mac, use `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<repo-name>` and `npx skills@latest`.
 - If the target folder is inside another git repo, create a standalone nested repo in the target folder before publishing.
 - First inspect existing skills under `/Users/samihalawa/git/PROJECTS_MCP_TOOLS`; update an obviously similar skill instead of creating a duplicate.
 - When paired with another skill, infer the full enhance → validate → commit → push → global reinstall → equality-check lifecycle without requiring the user to restate it.
