@@ -1,6 +1,6 @@
 ---
 name: skill-1build-2githubdeploy-3npxskillsinstall-skill
-description: Create or enhance skills in their authoritative repos, publish them to GitHub, and reinstall with the current Vercel skills CLI. Also reconcile shared skill installations and manager registrations without losing unique content or creating competing copies. When paired with a target skill, complete the full lifecycle unless the user explicitly limits publication or installation.
+description: Create or enhance skills in their authoritative repos, publish them to GitHub, and install in the current agent runtime; use the persisted Grok skill root on Grok and the current Vercel skills CLI on supported Codex/Claude installations. Also reconcile shared skill installations and manager registrations without losing unique content or creating competing copies. When paired with a target skill, complete the full lifecycle unless the user explicitly limits publication or installation.
 ---
 
 # Skill Build GitHub Deploy Npx Skills Install Skill
@@ -12,9 +12,31 @@ Use this skill when the goal is simple and direct:
 1. inspect existing skill repos first
 2. create or update a minimal skill repo locally
 3. push it as the correct public or private GitHub repo
-4. install it with the real Vercel `skills` CLI
+4. install it through the current runtime’s supported skill surface
 
 Do not add extra scripts, generators, package wrappers, or complex packaging unless the user explicitly asks for them. Most skills should be only `SKILL.md` plus `agents/openai.yaml`.
+
+## Resolve The Runtime Before Installing
+
+Use the active runtime instructions, current skill catalog, and that runtime’s
+`skill-creator` contract to identify the install root and supported installer.
+A quoted path, a vague phrase such as “this environment” or “install it here”,
+or an `npx` failure/timeout alone does not identify the runtime. Read the live
+contract before changing routes; do not infer Grok merely from a bundled path.
+
+- In the Grok runtime whose contract declares `/home/workdir/.grok/skills`,
+  that is the persisted user-skill root. `/root/.grok/skills` contains bundled
+  runtime skills and is not the durable destination for user changes. Override
+  a bundled skill by installing the same frontmatter name under the persisted
+  root. Keep the Git repository authoritative for publication; the persisted
+  root is the live installed surface, not a replacement for GitHub.
+- On Codex/Claude installations using `~/.agents/skills` and agent-specific
+  roots, retain the normal Vercel `skills` CLI and shared canonical payload
+  procedure below. Do not change those installations because another runtime
+  uses a different installer.
+- If the current runtime specifies another contract, follow its supported
+  installer and persistence rules, preserving the same source/remote/install
+  equality checks.
 
 ## Paired-Skill Invocation Contract
 
@@ -28,7 +50,7 @@ When the user provides, links, pastes, or invokes this skill together with one o
 - update `SKILL.md` and `agents/openai.yaml` when the trigger, description, or default behavior changes
 - validate the result
 - commit and push the authoritative branch
-- reinstall each changed skill globally with the narrowest current supported scoped `npx skills@latest add` command; use `--all` only when the user explicitly wants every discovered skill and agent
+- install each changed skill through the runtime branch in section 8; on Vercel-supported installations use the narrowest current scoped `npx skills@latest add` command, with `--all` only when the user explicitly wants every discovered skill and agent
 - prove source, GitHub, and installed-copy equality
 
 The user does **not** need to repeat phrases such as:
@@ -61,7 +83,7 @@ Before creating anything, determine the target path explicitly.
   declared, infer it from the existing maintained skill checkouts.
 - Preserve that established parent directory; do not invent a competing workspace.
 - If you already created the repo in the wrong place during the same task, stop, fix the path, and clean up the stray folder before continuing.
-- Treat installed copies under `~/.agents/skills`, `~/.codex/skills`, or `~/.claude/skills` as inputs and final verification surfaces, not the editing source of truth.
+- Treat runtime-installed copies, including `~/.agents/skills`, agent-specific roots, and Grok’s persisted root, as inputs and final verification surfaces, not the editing source of truth. Do not require a different runtime’s workspace path to exist; use the declared or established source workspace.
 - For an existing target, resolve its authoritative source in this order:
   1. an explicit repo path supplied by the user
   2. the established skills workspace’s `<skill-name>` checkout
@@ -129,9 +151,9 @@ or entrypoint hashes alone do not prove duplication.
   the matrix uniform, bulk-import stale variants, or use `--all` as a cleanup
   shortcut. Separate a provider switch from skill ownership: swapping model
   providers should not fork, reinstall, or erase skills and instructions.
-- Keep `npx skills add <owner>/<repo> --global` as Sami’s normal installer and
-  updater. Use current supported scoped agent/skill flags and the default
-  symlink installation. CC Switch indexes that existing installation; it must
+- Keep `npx skills add <owner>/<repo> --global` as the normal installer and
+  updater on Vercel-supported installations. Use current supported scoped
+  agent/skill flags and the default symlink installation. CC Switch indexes that existing installation; it must
   not become a second installer or copy-based library.
 - Keep one writer for the installed payload and coordinate manager registrations
   with its updates. Verify that a later publish/reinstall and manager sync both
@@ -281,7 +303,36 @@ If the repo has unrelated dirty work, preserve it and commit only the target ski
 
 If the requested behavior is already present and validation produces no source diff, do not create an empty commit. Still verify the remote source, reinstall globally, and prove installed-copy equality.
 
-### 8. Install With The Real Vercel Skills CLI
+### 8. Install In The Current Runtime
+
+#### Grok: persisted user root and skill-creator
+
+For the Grok contract described above, install the published source’s complete
+functional payload under `/home/workdir/.grok/skills/<skill-name>/`. Preserve
+existing divergent work before replacing files. The directory name must equal
+the `SKILL.md` frontmatter `name`. Use the active runtime’s `skill-creator`
+`init-skill.sh` only for a missing target, and `validate-skill.sh` for validation.
+Resolve the creator’s current path from the catalog and read its command
+contract first; the bundled creator is commonly under `/root/.grok/skills`.
+When that contract matches these arguments, the direct commands are:
+
+```bash
+CREATOR="/root/.grok/skills/skill-creator"
+TARGET="/home/workdir/.grok/skills/<skill-name>"
+if [ ! -d "$TARGET" ]; then
+  bash "$CREATOR/scripts/init-skill.sh" "<skill-name>" /home/workdir/.grok/skills
+fi
+# Install the complete published payload from the authoritative source here.
+bash "$CREATOR/scripts/validate-skill.sh" "$TARGET"
+```
+
+Do not use `npx skills add` as this Grok runtime’s install step. GitHub
+publication still serves other runtimes. A persisted write proves saved files;
+claim live discovery only when the next runtime skill list actually exposes
+that skill. Do not claim cloud sync or a running agent reload from the write
+alone.
+
+#### Codex/Claude: the real Vercel skills CLI
 
 Before installing, prove the active CLI version and help. Bare `npx skills` can resolve an old local package. Use the current Vercel CLI explicitly:
 
@@ -342,18 +393,25 @@ Use `add`, not `install`. Do not use stale command memory. If local help disagre
 
 ### 9. Verify
 
-Verify all of the following:
+Verify the common publication result on every runtime:
 
-- `gh repo view <owner>/<repo>` succeeds
-- the repo visibility matches the public/private decision
+- `gh repo view <owner>/<repo>` succeeds at the intended visibility
+- the GitHub default-branch SHA equals the final local SHA
+- remote payload hashes match the authoritative source, including linked files
+- the installed complete functional payload matches that published source, or
+  any intentional runtime-specific difference is documented
+- no empty commit was created when validation produced no source change
+
+For Grok’s persisted-root contract, verify the exact target directory and
+frontmatter name, successful `validate-skill.sh` result, and complete-tree
+source/remote/install equality. Report saved installation separately from live
+skill-list discovery. Do not require an npx result for Grok.
+
+For Vercel-supported Codex/Claude installations, also verify:
+
 - the exact scoped or explicitly authorised broad install command succeeds
 - `npx skills@latest list --global --json` includes the installed skill when the command returns reliably
 - the installed skill appears in the relevant global skills location for the targeted agent(s), such as `~/.codex/skills`, `~/.claude/skills`, or `~/.agents/skills`
-- the installed `SKILL.md` and `agents/openai.yaml` match the repo source, or any intentional install-time difference is documented
-- directly linked references match as well; `SKILL.md`/metadata equality alone
-  is insufficient when the behavior lives in `references/`
-- the GitHub default-branch SHA equals the final local SHA
-- remote raw-file hashes match the source files
 - duplicate global copies of the same skill do not retain stale instructions
 - advertised agent paths resolve to the expected physical install and are not
   double-counted merely because several symlinks expose the same directory
@@ -364,6 +422,7 @@ Verify all of the following:
 ## Hard Rules
 
 - Keep it simple.
+- Resolve the active runtime contract before selecting its installer; Grok’s persisted root uses skill-creator init/validate, while Vercel-supported installations retain npx and one shared canonical payload.
 - Use the declared or established skills workspace by default.
 - If the target folder is inside another git repo, create a standalone nested repo in the target folder before publishing.
 - First inspect existing skills in that workspace; update an obviously similar skill instead of creating a duplicate.
@@ -377,4 +436,4 @@ Verify all of the following:
 - Do not invent packaging requirements that are not needed for the current install flow.
 - Never rely on stale `npx skills` behavior without checking `npx skills@latest --version` and `npx skills@latest --help`.
 - For env-dependent skills, mention required env var names in `SKILL.md`, tell agents to use existing global envs, and avoid exposing or committing secret values.
-- Finish with the exact repo URL and the exact install command used.
+- Finish with the exact repo URL and the exact install command or runtime installation operation used, distinguishing saved files from observed live discovery.
