@@ -1,6 +1,6 @@
 ---
 name: skill-1build-2githubdeploy-3npxskillsinstall-skill
-description: Create or enhance a skill from user notes, update its authoritative minimal repo, commit and push it to GitHub, and reinstall it globally with the current Vercel `skills` CLI. When this skill is supplied alongside another skill, treat the other skill as the target and complete that entire lifecycle automatically unless the user explicitly requests review-only or no publication.
+description: Create or enhance skills in their authoritative repos, publish them to GitHub, and reinstall with the current Vercel skills CLI. Also reconcile shared skill installations and manager registrations without losing unique content or creating competing copies. When paired with a target skill, complete the full lifecycle unless the user explicitly limits publication or installation.
 ---
 
 # Skill Build GitHub Deploy Npx Skills Install Skill
@@ -28,7 +28,7 @@ When the user provides, links, pastes, or invokes this skill together with one o
 - update `SKILL.md` and `agents/openai.yaml` when the trigger, description, or default behavior changes
 - validate the result
 - commit and push the authoritative branch
-- reinstall the published skill globally with `npx skills@latest add ... --global --all`
+- reinstall each changed skill globally with the narrowest current supported scoped `npx skills@latest add` command; use `--all` only when the user explicitly wants every discovered skill and agent
 - prove source, GitHub, and installed-copy equality
 
 The user does **not** need to repeat phrases such as:
@@ -57,22 +57,30 @@ Only stop before commit, push, or installation when the user explicitly says `re
 
 Before creating anything, determine the target path explicitly.
 
-- In this environment, default new skill repos to:
-  - `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<repo-name>`
-- Only use a different parent directory if the user explicitly requested one.
-- Never invent ad hoc folders like `/Users/samihalawa/git/skills` when `PROJECTS_MCP_TOOLS` is the expected home.
+- Use the user’s declared skills workspace for new repositories. If none is
+  declared, infer it from the existing maintained skill checkouts.
+- Preserve that established parent directory; do not invent a competing workspace.
 - If you already created the repo in the wrong place during the same task, stop, fix the path, and clean up the stray folder before continuing.
 - Treat installed copies under `~/.agents/skills`, `~/.codex/skills`, or `~/.claude/skills` as inputs and final verification surfaces, not the editing source of truth.
 - For an existing target, resolve its authoritative source in this order:
   1. an explicit repo path supplied by the user
-  2. `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<skill-name>`
+  2. the established skills workspace’s `<skill-name>` checkout
   3. the GitHub repository recorded by the source checkout or installation metadata
-  4. clone the existing GitHub repo into the expected `PROJECTS_MCP_TOOLS` path when no local source exists
+  4. clone the existing GitHub repo into the established skills workspace when no local source exists
 - Compare names, remotes, current hashes, and installed content before choosing between multiple candidates. Do not overwrite an installed copy and call that publication.
 - Resolve `realpath` for `~/.agents/skills`, `~/.codex/skills`, and
   `~/.claude/skills` before counting installations. If the Codex and Claude
   roots are symlinks to `~/.agents/skills`, they are one physical installed copy
   exposed to multiple agents, not three independent copies.
+- Never edit an installed skill through a symlink path such as
+  `~/.codex/skills/<name>` or `~/.claude/skills/<name>`: writing through a
+  symlink silently mutates the one shared physical copy. Address the global
+  physical location (`~/.agents/skills/<name>`) directly, and never let an edit
+  land only in an installed copy — port every surviving lesson into the
+  authoritative source repo before reinstalling.
+- Before editing any target skill, read it completely first: `SKILL.md`,
+  `agents/openai.yaml`, and every directly linked reference file. Never edit
+  from a partial read, a snippet, or a remembered version.
 - If an installed copy is newer than the source repo, capture a focused diff,
   separate current-task edits from older installed-only drift, and manually port
   every surviving lesson into the authoritative source before reinstalling.
@@ -83,9 +91,57 @@ Before creating anything, determine the target path explicitly.
   name differs from the installed name; use the observed path plus
   `--full-depth` when needed.
 
+#### Shared installations and skill managers
+
+For installation or duplicate cleanup, enumerate the named apps' actual skill
+roots, their symlink targets, and any manager registry before changing them.
+Record physical directories separately from the aliases that expose them.
+Read every candidate's instructions and compare its complete functional tree:
+metadata, linked references, scripts, assets, and relevant file modes as well
+as `SKILL.md`. Ignore only known transient files such as `.git` and
+`.DS_Store`; resolve internal symlinks with cycle protection. Matching names
+or entrypoint hashes alone do not prove duplication.
+
+- Keep the Git repository authoritative for published changes and reuse one
+  existing physical installed payload per canonical skill and compatible format.
+  Prefer per-skill symlinks from other agent roots to that payload. A whole-root
+  symlink is suitable only after preserving that app's unique, system, and
+  format-specific contents. Do not rewrite plugin-managed or system skill trees.
+- An exact redundant copy can be replaced by a symlink after confirming its
+  complete tree and active callers. For a divergent copy, identify and preserve
+  its unique behavior, port compatible lessons to the owning source, and publish
+  before retiring it. Keep genuinely distinct tool variants distinct even when
+  their frontmatter names match. Remove a proven redundant symlink itself,
+  never its canonical target.
+- With CC Switch or another skill manager, inspect the installed version's
+  supported storage, adoption/import, and sync operations first. Prefer its
+  existing-root and symlink options so its registry points to the same physical
+  payload agents already use. A manager showing zero managed skills does not
+  mean the existing agent installations are missing. Import is appropriate only
+  when its destination is the chosen canonical install and it will not create
+  another independent copy or a symlink loop. Some managers reject agent roots
+  that resolve to their canonical storage root: CC Switch's Unified storage
+  does this. In that case, preserve the canonical directory, convert the agent
+  root aliases into physical directories, and expose skills through per-skill
+  symlinks before adopting the shared storage. Do not point Unified storage at
+  a tree whose agent roots still alias that same root.
+- Preserve each app's intended enabled set. Do not tick a new app merely to make
+  the matrix uniform, bulk-import stale variants, or use `--all` as a cleanup
+  shortcut. Separate a provider switch from skill ownership: swapping model
+  providers should not fork, reinstall, or erase skills and instructions.
+- Keep `npx skills add <owner>/<repo> --global` as Sami’s normal installer and
+  updater. Use current supported scoped agent/skill flags and the default
+  symlink installation. CC Switch indexes that existing installation; it must
+  not become a second installer or copy-based library.
+- Keep one writer for the installed payload and coordinate manager registrations
+  with its updates. Verify that a later publish/reinstall and manager sync both
+  preserve the canonical target. If the manager cannot safely adopt that root,
+  leave its skill sync unused and retain the working shared installation rather
+  than inventing a second source of truth.
+
 ### 2. Search Existing Skills Before Creating A New One
 
-Before creating a new skill, inspect existing skill repos under `/Users/samihalawa/git/PROJECTS_MCP_TOOLS` when possible.
+Before creating a new skill, inspect existing repos in the user’s declared skills workspace when possible.
 
 - Search skill names, descriptions, and workflows with `rg` and read likely matches.
 - If there is an obviously similar skill created for the same or highly similar intent, update that existing skill instead of creating another repo.
@@ -101,7 +157,7 @@ Default universal skills to public GitHub repos.
 Use a private GitHub repo when the skill is tied to one specific private project, customer, internal workflow, repo path, private infrastructure, non-public data model, credentials, or operational playbook.
 
 - For an existing GitHub repo, preserve its current visibility unless the user explicitly asks to change it.
-- Project-specific Oulang, Autoclient, IWAKY, InfoHuaxin, client, or private-infra skills should normally be private unless the user explicitly wants public.
+- Project-specific, client, or private-infrastructure skills should normally be private unless the user explicitly wants public.
 - Universal process skills with no private project details can be public.
 - Never publish private project instructions, env names tied to sensitive systems, or internal operational details into a public repo unless the user explicitly asks and the content is already safe to publish.
 
@@ -140,8 +196,8 @@ When updating an existing process, recovery, critique, closure, or implementatio
 
 - describe the reusable failure pattern, not a private project incident;
 - prefer evidence rules and decision gates over project names, account names, URLs, or transient screenshots;
-- if the lesson is about a failed external/API/tool attempt, include an anti-gate rule: do not disable, hide, remove, mark unavailable, or gate a capability from one failure; require 3 distinct approaches and 2 source layers before any temporary gate;
-- if a temporary gate is justified, require a comment such as `// TEMP-GATE: YYYY-MM-DD - tried: ... - not tried: ... - removal condition: ...`;
+- if the lesson is about a failed external/API/tool attempt, preserve successful reads and recover the literal failing layer; do not disable, hide, remove, or mark an entire capability unavailable from one failure. Check relevant prior attempts and current primary documentation, then use a materially different supported correction when needed. Stop on decisive success, a proven terminal condition, or exhaustion of applicable routes, without arbitrary attempt or source-layer quotas;
+- if a temporary restriction is justified by current evidence and authority, record its exact scope, cause, preserved working capabilities, and removal condition; do not turn a diagnostic into a permanent policy;
 - keep project-specific examples out of universal public skills unless the user explicitly asks and the details are safe to publish.
 
 For skills that need env vars:
@@ -246,8 +302,12 @@ an explicit agent plus `--yes`, for example:
 npx skills@latest add <owner>/<repo> --global --agent codex --skill <name> --yes --full-depth
 ```
 
-When advertised agent roots resolve to the same physical directory, one
-explicit agent install is sufficient; verify the shared realpath afterward.
+When advertised agent roots resolve to the same physical directory and the
+selected manager supports that layout, one explicit agent install is
+sufficient; verify the shared realpath afterward. When roots are separate
+directories with per-skill links, explicitly select each intended agent using
+the current CLI's scoped selectors, then verify every link points to the one
+canonical payload and refresh manager registration without copying it again.
 
 For a standalone repo where the user wants it available broadly, use:
 
@@ -286,7 +346,7 @@ Verify all of the following:
 
 - `gh repo view <owner>/<repo>` succeeds
 - the repo visibility matches the public/private decision
-- `npx skills@latest add <owner>/<repo> --global --all` succeeds, or the exact fallback command is recorded
+- the exact scoped or explicitly authorised broad install command succeeds
 - `npx skills@latest list --global --json` includes the installed skill when the command returns reliably
 - the installed skill appears in the relevant global skills location for the targeted agent(s), such as `~/.codex/skills`, `~/.claude/skills`, or `~/.agents/skills`
 - the installed `SKILL.md` and `agents/openai.yaml` match the repo source, or any intentional install-time difference is documented
@@ -297,13 +357,16 @@ Verify all of the following:
 - duplicate global copies of the same skill do not retain stale instructions
 - advertised agent paths resolve to the expected physical install and are not
   double-counted merely because several symlinks expose the same directory
+- manager registrations, enabled-app sets, and symlink targets match the chosen
+  ownership; no broken links, loops, stale independent payloads, or unexpected
+  app enablement were introduced
 
 ## Hard Rules
 
 - Keep it simple.
-- Use `/Users/samihalawa/git/PROJECTS_MCP_TOOLS/<repo-name>` by default in this environment.
+- Use the declared or established skills workspace by default.
 - If the target folder is inside another git repo, create a standalone nested repo in the target folder before publishing.
-- First inspect existing skills under `/Users/samihalawa/git/PROJECTS_MCP_TOOLS`; update an obviously similar skill instead of creating a duplicate.
+- First inspect existing skills in that workspace; update an obviously similar skill instead of creating a duplicate.
 - When paired with another skill, infer the full enhance → validate → commit → push → global reinstall → equality-check lifecycle without requiring the user to restate it.
 - Self-application is valid: this skill can enhance, publish, and reinstall itself.
 - Do not stop for plan approval during the paired-skill lifecycle unless the user explicitly requested review before mutation.
