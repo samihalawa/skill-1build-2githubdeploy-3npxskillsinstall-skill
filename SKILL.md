@@ -1,6 +1,6 @@
 ---
 name: skill-1build-2githubdeploy-3npxskillsinstall-skill
-description: Create or enhance skills in their authoritative repos, publish them to GitHub, and install in the current agent runtime; use the persisted Grok skill root on Grok and the current Vercel skills CLI on supported Codex/Claude installations. Also reconcile shared skill installations and manager registrations without losing unique content or creating competing copies. When paired with a target skill, complete the full lifecycle unless the user explicitly limits publication or installation.
+description: Own every skill discovery, installation, creation, enhancement, publication and reinstall workflow. Inspect authoritative sources and relevant historical use, publish changed owner-authored skills, reuse unchanged maintained third-party sources without republishing them, and install through the current runtime contract with complete source/remote/install verification. Reconcile shared installations without losing unique content or creating competing copies.
 ---
 
 # Skill Build GitHub Deploy Npx Skills Install Skill
@@ -15,6 +15,35 @@ Use this skill when the goal is simple and direct:
 4. install it through the current runtime’s supported skill surface
 
 Do not add extra scripts, generators, package wrappers, or complex packaging unless the user explicitly asks for them. Most skills should be only `SKILL.md` plus `agents/openai.yaml`.
+
+## Universal Lifecycle Routing
+
+Use this as the owning workflow for every skill discovery, install, creation,
+enhancement, publication or reinstall task, even when the user does not name
+this skill. Preserve the requested phase and explicit limits: a discovery-only
+or read-only request does not become an installation or publication request.
+
+- Recover relevant existing installations, authoritative repositories and actual
+  prior user invocations before selecting or creating a skill. Installed names,
+  summaries and popularity are locators; inspect the complete candidate payload
+  and its current source before choosing it.
+- Use `$find-skills` for registry discovery when relevant. Check the current CLI
+  and use `npx skills@latest find <specific-query>` on Vercel-supported runtimes;
+  do not reuse obsolete `search` syntax or open an unnecessary options/permission
+  loop when the task already authorizes selection and installation.
+- For a new or changed owner-authored skill, complete source editing, validation,
+  commit, publication, scoped installation and complete-payload equality checks.
+- For an unchanged third-party skill, reuse its maintained published repository,
+  inspect its current revision and install the selected skill directly. Do not
+  create an unnecessary fork, empty commit or owner mirror merely to satisfy
+  the word "publish". Verify the installed payload against that upstream revision.
+- Preserve useful installed-only behavior before replacement. Port a genuinely
+  requested customization to an appropriate maintained owner source when needed;
+  do not silently edit vendor-managed payloads or erase unexplained unique work.
+- Recover and install requested related skills as a small relevant set. Keep one
+  physical payload per compatible skill and the intended agent set. Check actual
+  runtime roles, model availability, concurrency and supported tools separately
+  from installation; upstream defaults do not prove those capabilities exist.
 
 ## Resolve The Runtime Before Installing
 
