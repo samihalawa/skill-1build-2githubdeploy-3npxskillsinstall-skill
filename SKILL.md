@@ -424,17 +424,44 @@ Use `add`, not `install`. Do not use stale command memory. If local help disagre
 
 `npx skills` writes only local agent roots (`~/.agents/skills`, `~/.claude/skills`, `~/.codex/skills`). claude.ai chat, Cowork and cloud sessions never read those folders, so a skill installed only with `npx skills` does not appear there.
 
-After every install, update or removal on the Mac, run:
+After every install, update or removal on the Mac, run this inline. There is no script file for it; do not create one.
 
 ```bash
-~/git/PROJECTS_MCP_TOOLS/2026-MASTER-Marketplace-Plugins-Connectors-etc/scripts/sync-skills.sh
+M=~/git/PROJECTS_MCP_TOOLS/2026-MASTER-Marketplace-Plugins-Connectors-etc; P=$M/plugins/sami-skills
+git -C $M pull -q --rebase origin main
+rsync -aL --delete --delete-excluded --exclude .git --exclude .github --exclude node_modules --exclude '.env' --exclude '.env.*' --exclude .DS_Store --exclude __pycache__ --exclude '*.pyc' --exclude .venv --exclude /.system --exclude /synced --exclude /midscene-skills ~/.agents/skills/ $P/skills/
+python3 - $M <<'PY'
+import json,os,re,shutil,subprocess,sys
+M=sys.argv[1]; P=M+'/plugins/sami-skills'; S=P+'/skills'
+tok=re.compile(r'gh[po]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-or-v1-[A-Za-z0-9]{30,}|ops_[A-Za-z0-9]{40,}')
+for n in os.listdir(S):
+    if os.path.isdir(S+'/'+n) and not os.path.isfile(S+'/'+n+'/SKILL.md'): shutil.rmtree(S+'/'+n)
+for d,_,fs in os.walk(S):
+    for n in fs:
+        f=os.path.join(d,n)
+        try: s=open(f,encoding='utf-8').read()
+        except Exception: continue
+        t=tok.sub('[retrieve from 1Password]',s)
+        if n=='SKILL.md' and os.path.dirname(d)==S:
+            m=re.match(r'---\n.*?\n---',t,re.S)
+            if m: t=re.sub(r'^(description:[ \t]*)(.*)$',lambda x:x.group(0) if re.fullmatch(r'[>|][-+]?[ \t]*',x.group(2)) else x.group(1)+x.group(2).replace('<','').replace('>',''),m.group(0),flags=re.M)+t[m.end():]
+        if t!=s: open(f,'w',encoding='utf-8').write(t)
+if not subprocess.run(['git','-C',M,'status','--porcelain','--','plugins/sami-skills/skills'],capture_output=True,text=True).stdout: sys.exit('sami-skills: no changes')
+a,b,c=map(int,json.load(open(P+'/plugin.json'))['version'].split('.')); v=f'{a}.{b}.{c+1}'
+for f in (P+'/plugin.json',P+'/.claude-plugin/plugin.json',M+'/.claude-plugin/marketplace.json',M+'/.agents/plugins/marketplace.json'):
+    j=json.load(open(f))
+    for e in ([x for x in j['plugins'] if x['name']=='sami-skills'] if 'plugins' in j else [j]): e['version']=v
+    open(f,'w').write(json.dumps(j,indent=2,ensure_ascii=False)+'\n')
+print('sami-skills',v)
+PY
+[ $? = 0 ] && git -C $M add plugins/sami-skills .claude-plugin/marketplace.json .agents/plugins/marketplace.json && git -C $M commit -qm "sami-skills: sync from ~/.agents/skills" && git -C $M push -q origin HEAD
 ```
 
-It mirrors `~/.agents/skills` into the `sami-skills` plugin of the private marketplace repo, bumps the plugin version and pushes. The claude.ai account has that marketplace added with Sync automatically on and `sami-skills` installed, so the pushed version reaches claude.ai, Cowork and cloud sessions as `sami-skills:<skill-name>`. Verify with the synced commit shown under Customize > Plugins > Manage marketplaces.
+It mirrors `~/.agents/skills` into the `sami-skills` plugin of the private marketplace repo (tokens replaced, `.env` files left out, angle brackets removed from inline descriptions because claude.ai rejects them), bumps the plugin version and pushes. The claude.ai account has that marketplace added with Sync automatically on and `sami-skills` installed, so the pushed version reaches claude.ai, Cowork and cloud sessions as `sami-skills:<skill-name>`. Verify with the synced commit shown under Customize > Plugins > Manage marketplaces.
 
 - Keep `"sami-skills@synced": false` in `~/.claude/settings.json`; Claude Code on the Mac already loads the same skills from disk.
 - Do not upload a single skill ZIP to claude.ai for a skill that is in `sami-skills`; that creates a second copy that never updates.
-- ChatGPT on the web has no GitHub sync on a personal plan. To refresh it, upload `dist/sami-skills.zip` (built by the same script) at chatgpt.com/plugins > Add > Upload plugin archive.
+- ChatGPT on the web has no GitHub sync on a personal plan. To refresh it, build the archive inline with `(cd $M/plugins && mkdir -p ../dist && rm -f ../dist/sami-skills.zip && zip -qr ../dist/sami-skills.zip sami-skills -x '*/.claude-plugin/*')` and upload it at chatgpt.com/plugins > Add > Upload plugin archive.
 
 ### 9. Verify
 
