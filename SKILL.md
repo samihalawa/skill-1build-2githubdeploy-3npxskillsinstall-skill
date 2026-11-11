@@ -420,6 +420,22 @@ npx skills@latest add https://github.com/<owner>/<repo> --global --all
 
 Use `add`, not `install`. Do not use stale command memory. If local help disagrees with prior notes, prefer `npx skills@latest --help`.
 
+### 8b. Sync The Hosted Claude And ChatGPT Surfaces
+
+`npx skills` writes only local agent roots (`~/.agents/skills`, `~/.claude/skills`, `~/.codex/skills`). claude.ai chat, Cowork and cloud sessions never read those folders, so a skill installed only with `npx skills` does not appear there.
+
+After every install, update or removal on the Mac, run:
+
+```bash
+~/git/PROJECTS_MCP_TOOLS/2026-MASTER-Marketplace-Plugins-Connectors-etc/scripts/sync-skills.sh
+```
+
+It mirrors `~/.agents/skills` into the `sami-skills` plugin of the private marketplace repo, bumps the plugin version and pushes. The claude.ai account has that marketplace added with Sync automatically on and `sami-skills` installed, so the pushed version reaches claude.ai, Cowork and cloud sessions as `sami-skills:<skill-name>`. Verify with the synced commit shown under Customize > Plugins > Manage marketplaces.
+
+- Keep `"sami-skills@synced": false` in `~/.claude/settings.json`; Claude Code on the Mac already loads the same skills from disk.
+- Do not upload a single skill ZIP to claude.ai for a skill that is in `sami-skills`; that creates a second copy that never updates.
+- ChatGPT on the web has no GitHub sync on a personal plan. To refresh it, upload `dist/sami-skills.zip` (built by the same script) at chatgpt.com/plugins > Add > Upload plugin archive.
+
 ### 9. Verify
 
 Verify the common publication result on every runtime:
